@@ -1,1 +1,1 @@
-"# Projet IA G‚n‚rative" 
+"Projet IA gÃ©nÃ©rative" 
