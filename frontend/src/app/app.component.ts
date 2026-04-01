@@ -14,14 +14,26 @@ export class AppComponent {
   
   // ===== VARIABLES =====
   
-  prompt: string = '';                    // Le texte entré par l'utilisateur
-  selectedType: 'text' | 'image' | 'video' = 'text';  // Type de génération
+  prompt: string = '';
+  selectedType: 'text' | 'image' | 'video' = 'text';
+  selectedStyle: string = 'general';
   
-  result: string = '';                    // Résultat texte ou image base64
-  videoUrl: string = '';                  // URL de la vidéo générée
+  result: string = '';
+  videoUrl: string = '';
   
-  isLoading: boolean = false;             // État de chargement
-  error: string = '';                     // Message d'erreur
+  isLoading: boolean = false;
+  error: string = '';
+  
+  // Styles disponibles pour les images IA
+  imageStyles = [
+    { value: 'general', label: '🎨 Général' },
+    { value: 'photo', label: '📷 Photo réaliste' },
+    { value: 'art', label: '🖼️ Art digital' },
+    { value: 'anime', label: '🎌 Anime' },
+    { value: 'cinematic', label: '🎬 Cinématique' },
+    { value: 'fantasy', label: '✨ Fantasy' },
+    { value: 'realistic', label: '🔍 Ultra réaliste' }
+  ];
   
   // ===== CONSTRUCTEUR =====
   
@@ -29,38 +41,26 @@ export class AppComponent {
   
   // ===== MÉTHODES =====
   
-  /**
-   * Sélectionner le type de génération
-   */
   selectType(type: 'text' | 'image' | 'video'): void {
     this.selectedType = type;
     this.clearResults();
   }
   
-  /**
-   * Effacer les résultats précédents
-   */
   clearResults(): void {
     this.result = '';
     this.videoUrl = '';
     this.error = '';
   }
   
-  /**
-   * Générer le contenu
-   */
   generate(): void {
-    // Vérifier que le prompt n'est pas vide
     if (!this.prompt.trim()) {
       this.error = 'Veuillez entrer un prompt';
       return;
     }
     
-    // Réinitialiser
     this.clearResults();
     this.isLoading = true;
     
-    // Appeler la bonne méthode selon le type
     switch (this.selectedType) {
       case 'text':
         this.generateText();
@@ -74,9 +74,6 @@ export class AppComponent {
     }
   }
   
-  /**
-   * Générer du texte
-   */
   private generateText(): void {
     this.apiService.generateText(this.prompt).subscribe({
       next: (response: GenerateResponse) => {
@@ -90,13 +87,10 @@ export class AppComponent {
     });
   }
   
-  /**
-   * Générer une image
-   */
   private generateImage(): void {
-    this.apiService.generateImage(this.prompt).subscribe({
+    this.apiService.generateImage(this.prompt, this.selectedStyle).subscribe({
       next: (response: GenerateResponse) => {
-        this.result = response.result;  // Image en base64
+        this.result = response.result;
         this.isLoading = false;
       },
       error: (err) => {
@@ -106,13 +100,9 @@ export class AppComponent {
     });
   }
   
-  /**
-   * Générer une vidéo
-   */
   private generateVideo(): void {
     this.apiService.generateVideo(this.prompt).subscribe({
       next: (blob: Blob) => {
-        // Créer une URL pour le blob vidéo
         this.videoUrl = URL.createObjectURL(blob);
         this.isLoading = false;
       },
@@ -123,31 +113,21 @@ export class AppComponent {
     });
   }
   
-  /**
-   * Télécharger le résultat
-   */
   download(): void {
+    const a = document.createElement('a');
+    
     if (this.selectedType === 'text' && this.result) {
-      // Télécharger le texte comme fichier .txt
       const blob = new Blob([this.result], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      a.href = URL.createObjectURL(blob);
       a.download = 'generated_text.txt';
-      a.click();
-      URL.revokeObjectURL(url);
     } else if (this.selectedType === 'image' && this.result) {
-      // Télécharger l'image
-      const a = document.createElement('a');
       a.href = this.result;
       a.download = 'generated_image.png';
-      a.click();
     } else if (this.selectedType === 'video' && this.videoUrl) {
-      // Télécharger la vidéo
-      const a = document.createElement('a');
       a.href = this.videoUrl;
       a.download = 'generated_video.mp4';
-      a.click();
     }
+    
+    a.click();
   }
 }
