@@ -2,28 +2,28 @@
   
   <!-- ===== HEADER ===== -->
   <header class="header">
-    <h1>🤖 IA Générative</h1>
-    <p class="subtitle">Générez du texte, des images et des vidéos avec l'IA</p>
+    <h1>IA Générative</h1>
+    <p class="subtitle">Générez du texte, des images et des vidéos avec l'intelligence artificielle</p>
   </header>
 
-  <!-- ===== FORMULAIRE ===== -->
+  <!-- ===== MAIN ===== -->
   <main class="main">
     
     <!-- Zone de saisie du prompt -->
     <section class="input-section">
-      <label for="prompt" class="label">Entrez votre prompt :</label>
+      <label for="prompt" class="label">💬 Votre prompt</label>
       <textarea
         id="prompt"
         [(ngModel)]="prompt"
-        placeholder="Ex: Un chat astronaute explorant une planète colorée..."
+        placeholder="Décrivez ce que vous voulez générer...&#10;Ex: Un chat astronaute explorant une planète colorée, un dragon majestueux, une forêt magique..."
         class="textarea"
-        rows="3"
+        rows="4"
       ></textarea>
     </section>
 
-    <!-- Sélection du type -->
+    <!-- Sélection du type de génération -->
     <section class="type-section">
-      <p class="label">Type de génération :</p>
+      <p class="label">🎯 Type de génération</p>
       <div class="type-buttons">
         <button 
           (click)="selectType('text')" 
@@ -37,7 +37,7 @@
           [class.active]="selectedType === 'image'"
           class="type-btn"
         >
-          🖼️ Image
+          🎨 Image
         </button>
         <button 
           (click)="selectType('video')" 
@@ -49,7 +49,29 @@
       </div>
     </section>
 
-    <!-- Bouton générer -->
+    <!-- Sélection du style (uniquement pour Image) -->
+    <section *ngIf="selectedType === 'image'" class="style-section">
+      <p class="label">🎨 Style artistique</p>
+      <div class="style-buttons">
+        <button 
+          *ngFor="let style of imageStyles"
+          (click)="selectedStyle = style.value"
+          [class.active]="selectedStyle === style.value"
+          class="style-btn"
+        >
+          {{ style.label }}
+        </button>
+      </div>
+    </section>
+
+    <!-- Info pour Vidéo -->
+    <section *ngIf="selectedType === 'video'" class="info-section">
+      <p class="info-text">
+        ⏱️ La génération de vidéo prend 2-3 minutes. Une série d'images sera créée et assemblée en vidéo cinématique.
+      </p>
+    </section>
+
+    <!-- Bouton Générer -->
     <section class="generate-section">
       <button 
         (click)="generate()" 
@@ -67,14 +89,15 @@
     </div>
 
     <!-- Indicateur de chargement -->
-    <div *ngIf="isLoading" class="loading">
+    <section *ngIf="isLoading" class="loading">
       <div class="spinner"></div>
       <p>
-        <span *ngIf="selectedType === 'text'">Génération du texte...</span>
-        <span *ngIf="selectedType === 'image'">Génération de l'image (~30 secondes)...</span>
-        <span *ngIf="selectedType === 'video'">Génération de la vidéo (~2-3 minutes)...</span>
+        <span *ngIf="selectedType === 'text'">Génération du texte avec LLaMA 3...</span>
+        <span *ngIf="selectedType === 'image'">Création de l'image avec l'IA (~30s)...</span>
+        <span *ngIf="selectedType === 'video'">Génération de la vidéo (~2-3 min)...</span>
       </p>
-    </div>
+      <div class="progress-bar"></div>
+    </section>
 
     <!-- ===== RÉSULTATS ===== -->
     <section *ngIf="result || videoUrl" class="result-section">
@@ -85,21 +108,27 @@
         </button>
       </div>
 
-      <!-- Résultat texte -->
+      <!-- Résultat Texte -->
       <div *ngIf="selectedType === 'text' && result" class="result-text">
         <p>{{ result }}</p>
       </div>
 
-      <!-- Résultat image -->
+      <!-- Résultat Image -->
       <div *ngIf="selectedType === 'image' && result" class="result-image">
-        <img [src]="result" alt="Image générée" />
+        <img [src]="result" alt="Image générée par IA" />
+        <p class="image-caption">
+          🎨 Généré par IA • Style : {{ selectedStyle }}
+        </p>
       </div>
 
-      <!-- Résultat vidéo -->
+      <!-- Résultat Vidéo -->
       <div *ngIf="selectedType === 'video' && videoUrl" class="result-video">
         <video controls [src]="videoUrl">
           Votre navigateur ne supporte pas la lecture vidéo.
         </video>
+        <p class="image-caption">
+          🎬 Vidéo générée avec effets Ken Burns
+        </p>
       </div>
     </section>
 
@@ -107,7 +136,7 @@
 
   <!-- ===== FOOTER ===== -->
   <footer class="footer">
-    <p>Propulsé par Groq (LLaMA 3) et HuggingFace (SDXL)</p>
+    <p>Propulsé par Groq (LLaMA 3) et Stable Diffusion</p>
   </footer>
 
 </div>

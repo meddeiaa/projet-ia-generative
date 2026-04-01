@@ -7,10 +7,6 @@ from config.settings import settings
 async def generate_video(prompt: str, num_images: int = 5) -> str:
     """
     Génère une vidéo cinématique avec effets professionnels
-    - Ken Burns effect (zoom/pan)
-    - Transitions en fondu
-    - Prompts cohérents
-    - Qualité HD
     """
     try:
         output_dir = settings.OUTPUT_DIR
@@ -18,8 +14,6 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
         
         images = []
         
-        # ===== PROMPTS COHÉRENTS =====
-        # On garde le même sujet mais on change l'angle/lumière
         base_style = "cinematic, highly detailed, professional photography, 8k quality"
         
         variations = [
@@ -33,6 +27,7 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
         print("🎬 Génération des images cinématiques...")
         print(f"   Thème: {prompt}")
         
+        # ✅ URL CORRIGÉE - API gratuite
         API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
         headers = {"Authorization": f"Bearer {settings.HF_API_KEY}"}
         
@@ -61,22 +56,16 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
                 continue
         
         if len(images) < 2:
-            raise Exception(f"Seulement {len(images)} image(s). Hugging Face peut être lent, réessayez.")
+            raise Exception(f"Seulement {len(images)} image(s). Réessayez.")
         
+        # ===== Le reste du code reste IDENTIQUE =====
         print(f"🎬 Création de {len(images)} clips avec effets Ken Burns...")
         
-        # ===== EFFETS KEN BURNS VARIÉS =====
-        # Chaque image aura un effet de zoom/pan différent
         ken_burns_effects = [
-            # Zoom in vers le centre
             "zoompan=z='min(zoom+0.0015,1.5)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=90:s=1280x720:fps=30",
-            # Zoom out depuis le centre
             "zoompan=z='if(lte(zoom,1.0),1.5,max(1.001,zoom-0.0015))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=90:s=1280x720:fps=30",
-            # Pan de gauche à droite
             "zoompan=z='1.3':x='if(lte(on,1),0,x+1)':y='ih/2-(ih/zoom/2)':d=90:s=1280x720:fps=30",
-            # Pan de droite à gauche
             "zoompan=z='1.3':x='if(lte(on,1),iw,x-1)':y='ih/2-(ih/zoom/2)':d=90:s=1280x720:fps=30",
-            # Zoom in coin supérieur
             "zoompan=z='min(zoom+0.0015,1.5)':x='iw/4-(iw/zoom/4)':y='ih/4-(ih/zoom/4)':d=90:s=1280x720:fps=30"
         ]
         
@@ -84,11 +73,8 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
         
         for i, img in enumerate(images):
             clip_path = os.path.join(output_dir, f"clip_{i}.mp4")
-            
-            # Alterner les effets Ken Burns
             effect = ken_burns_effects[i % len(ken_burns_effects)]
             
-            # Créer le clip avec effet
             cmd = [
                 "ffmpeg", "-y",
                 "-loop", "1",
@@ -116,11 +102,9 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
         
         print("🎬 Assemblage avec transitions en fondu...")
         
-        # ===== ASSEMBLAGE AVEC CROSSFADE =====
         video_path = os.path.join(output_dir, "output.mp4")
         
         if len(temp_clips) == 2:
-            # Seulement 2 clips : simple crossfade
             cmd = [
                 "ffmpeg", "-y",
                 "-i", temp_clips[0],
@@ -132,25 +116,18 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
                 video_path
             ]
             result = subprocess.run(cmd, capture_output=True, text=True)
-            
         else:
-            # Plus de 2 clips : crossfade en chaîne
-            # Construire le filtre complexe
             filter_parts = []
-            
-            # Premier crossfade
             filter_parts.append(f"[0:v][1:v]xfade=transition=fade:duration=0.5:offset=2.5[v1]")
             
-            # Crossfades suivants
             for i in range(2, len(temp_clips)):
                 prev_label = f"v{i-1}"
                 next_label = f"v{i}" if i < len(temp_clips) - 1 else "v"
-                offset = 2.5 + (i - 1) * 2.5  # Calculer l'offset
+                offset = 2.5 + (i - 1) * 2.5
                 filter_parts.append(f"[{prev_label}][{i}:v]xfade=transition=fade:duration=0.5:offset={offset}[{next_label}]")
             
             filter_complex = ";".join(filter_parts)
             
-            # Construire la commande
             cmd = ["ffmpeg", "-y"]
             for clip in temp_clips:
                 cmd.extend(["-i", clip])
@@ -164,7 +141,6 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
             
             result = subprocess.run(cmd, capture_output=True, text=True)
         
-        # Si le crossfade échoue, fallback à concat simple
         if result.returncode != 0 or not os.path.exists(video_path):
             print("  ⚠️ Crossfade échoué, utilisation concat simple...")
             
@@ -191,12 +167,10 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
         if not os.path.exists(video_path):
             raise Exception("Impossible de créer la vidéo finale")
         
-        # ===== AJOUTER EFFET CINÉMATIQUE (Color Grading) =====
         print("🎨 Application du color grading cinématique...")
         
         final_video = os.path.join(output_dir, "final_output.mp4")
         
-        # Effet cinématique : légère saturation, contraste, tons chauds
         color_cmd = [
             "ffmpeg", "-y",
             "-i", video_path,
@@ -211,7 +185,6 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
         result = subprocess.run(color_cmd, capture_output=True, text=True)
         
         if result.returncode == 0 and os.path.exists(final_video):
-            # Remplacer la vidéo originale par la version color graded
             os.remove(video_path)
             os.rename(final_video, video_path)
             print("  ✅ Color grading appliqué!")
@@ -220,7 +193,6 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
         
         print(f"🎉 Vidéo finale créée: {video_path}")
         
-        # ===== NETTOYAGE =====
         for img in images:
             try: os.remove(img)
             except: pass
@@ -228,7 +200,6 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
             try: os.remove(clip)
             except: pass
         
-        # Afficher les infos de la vidéo
         size = os.path.getsize(video_path) / (1024 * 1024)
         print(f"  📊 Taille: {size:.2f} MB")
         

@@ -2,36 +2,39 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from typing import Optional
 
 # Importer les services
 from services.text_service import generate_text
-from services.image_service import generate_image, generate_image_free
+from services.image_service import generate_image
 from services.video_service import generate_video
 
-# Créer l'application FastAPI
+# Créer l'application
 app = FastAPI(
     title="API IA Générative",
     description="API pour générer du texte, des images et des vidéos avec l'IA",
     version="1.0.0"
 )
 
-# Configurer CORS (permet au frontend d'appeler le backend)
+# Configurer CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],        # Autoriser tous les domaines
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],        # Autoriser toutes les méthodes
-    allow_headers=["*"],        # Autoriser tous les headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ===== MODÈLES DE DONNÉES =====
 
 class PromptRequest(BaseModel):
-    """Requête avec un prompt"""
     prompt: str
 
+class ImageRequest(BaseModel):
+    prompt: str
+    style: Optional[str] = "general"
+
 class GenerateResponse(BaseModel):
-    """Réponse avec le résultat"""
     success: bool
     result: str
 
@@ -45,9 +48,9 @@ async def root():
         "endpoints": {
             "texte": "/generate/text",
             "image": "/generate/image",
-            "image_gratuite": "/generate/image-free",
             "video": "/generate/video"
-        }
+        },
+        "styles_image": ["general", "photo", "art", "anime", "cinematic", "fantasy", "realistic"]
     }
 
 
@@ -67,30 +70,16 @@ async def api_generate_text(request: PromptRequest):
 
 
 @app.post("/generate/image", response_model=GenerateResponse)
-async def api_generate_image(request: PromptRequest):
+async def api_generate_image(request: ImageRequest):
     """
-    Génère une image à partir d'un prompt (Hugging Face)
+    Génère une image avec l'IA
     
     - **prompt**: Description de l'image
+    - **style**: Style artistique (general, photo, art, anime, cinematic, fantasy, realistic)
     - **Retourne**: Image en base64
     """
     try:
-        result = await generate_image(request.prompt)
-        return GenerateResponse(success=True, result=result)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/generate/image-free", response_model=GenerateResponse)
-async def api_generate_image_free(request: PromptRequest):
-    """
-    Génère une image à partir d'un prompt (Pollinations - gratuit)
-    
-    - **prompt**: Description de l'image
-    - **Retourne**: URL de l'image
-    """
-    try:
-        result = await generate_image_free(request.prompt)
+        result = await generate_image(request.prompt, request.style)
         return GenerateResponse(success=True, result=result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -113,23 +102,6 @@ async def api_generate_video(request: PromptRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-@app.post("/generate/video-quick")
-async def api_generate_video_quick(request: PromptRequest):
-    """
-    Génère une vidéo rapide (2 images seulement)
-    Plus rapide mais moins de contenu
-    """
-    try:
-        from services.video_service import generate_video_simple
-        video_path = await generate_video_simple(request.prompt)
-        return FileResponse(
-            video_path,
-            media_type="video/mp4",
-            filename="generated_video.mp4"
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))    
 
 
 # ===== LANCER LE SERVEUR =====

@@ -14,6 +14,7 @@ class Settings:
     # Clés API
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     HF_API_KEY: str = os.getenv("HF_API_KEY", "")
+    UNSPLASH_ACCESS_KEY: str = os.getenv("UNSPLASH_ACCESS_KEY", "") 
     
     # Dossier pour les fichiers générés
     OUTPUT_DIR: str = "output"
