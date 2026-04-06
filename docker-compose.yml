@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  # ===== BACKEND =====
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ia-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/output:/app/output
+    restart: unless-stopped
+
+  # ===== FRONTEND =====
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ia-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
