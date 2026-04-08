@@ -297,8 +297,6 @@ GitHub
 LinkedIn
 
 </div>
-📄 Licence
-Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
 
 <div align="center">
 ⭐ Si ce projet t'a plu, n'hésite pas à lui donner une étoile !
