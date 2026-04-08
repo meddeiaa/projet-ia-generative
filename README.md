@@ -1,6 +1,4 @@
-Markdown
 
-<!-- HEADER -->
 <div align="center">
   
 # 🤖 IA Générative - Full Stack Application
@@ -167,7 +165,7 @@ text
 
 ### Installation avec Docker (recommandé)
 
-```bash
+*bash
 # 1. Clone le repository
 git clone https://github.com/meddeiaa/projet-ia-generative.git
 cd projet-ia-generative
@@ -307,4 +305,5 @@ Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
 
 Made with ❤️ and ☕
 
-</div> ```
+</div>
+
