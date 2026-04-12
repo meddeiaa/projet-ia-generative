@@ -58,37 +58,37 @@ Le projet démontre une architecture moderne avec **séparation frontend/backend
 
 ---
 
+---
+
 ## 🎥 Démo
 
 ### Interface principale
-┌─────────────────────────────────────────────────────────────┐
-│ 🤖 IA Générative │
-├─────────────────────────────────────────────────────────────┤
-│ │
-│ Entrez votre prompt : │
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ Un chat astronaute sur la lune │ │
-│ └─────────────────────────────────────────────────────┘ │
-│ │
-│ [📝 Texte] [🖼️ Image] [🎬 Vidéo] │
-│ │
-│ [ 🚀 GÉNÉRER ] │
-│ │
-└─────────────────────────────────────────────────────────────┘
 
-text
+![Interface principale](screenshots/interface.png)
 
+*Interface moderne avec design glassmorphism et grille animée*
 
-### Exemples de génération
+### Génération de texte
 
-| Type | Prompt | Résultat |
-|------|--------|----------|
-| 📝 Texte | "Explique Docker en 2 phrases" | Réponse IA complète |
-| 🖼️ Image | "A bird flying, cinematic style" | Image HD générée |
-| 🎬 Vidéo | "Sunset over mountains" | Vidéo MP4 avec effets |
+![Génération de texte](screenshots/text-generation.png)
+
+*Génération de texte intelligent avec LLaMA 3.3 (70B paramètres) via Groq API*
+
+### Génération d'images
+
+![Génération d'image 1](screenshots/image-generation-1.png)
+
+![Génération d'image 2](screenshots/image-generation-2.png)
+
+*Création d'images HD avec FLUX.1 et 7 styles artistiques*
+
+### Génération de vidéo
+
+![Génération de vidéo](screenshots/video-generation.png)
+
+*Production de vidéos cinématiques avec effets Ken Burns et color grading*
 
 ---
-
 ## 🛠️ Technologies
 
 ### Backend

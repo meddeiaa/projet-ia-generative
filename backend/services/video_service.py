@@ -4,6 +4,45 @@ import httpx
 import random
 from config.settings import settings
 
+# ✅ Liste des modèles (fallback automatique)
+IMAGE_MODELS = [
+    "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
+    "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-dev",
+    "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-3.5-large",
+]
+
+
+async def generate_single_image(prompt: str, headers: dict) -> bytes | None:
+    """
+    Essaie de générer une image avec fallback automatique
+    """
+    for model_url in IMAGE_MODELS:
+        try:
+            model_name = model_url.split("/")[-1]
+            print(f"    🔄 Essai avec {model_name}...")
+            
+            async with httpx.AsyncClient(timeout=120) as client:
+                response = await client.post(
+                    model_url,
+                    headers=headers,
+                    json={"inputs": prompt}
+                )
+            
+            if response.status_code == 200:
+                content_type = response.headers.get("content-type", "")
+                if "image" in content_type:
+                    print(f"    ✅ Succès avec {model_name}")
+                    return response.content
+            
+            print(f"    ⚠️ {model_name} → Status {response.status_code}")
+            
+        except Exception as e:
+            print(f"    ⚠️ {model_name} → Erreur: {str(e)[:50]}")
+            continue
+    
+    return None
+
+
 async def generate_video(prompt: str, num_images: int = 5) -> str:
     """
     Génère une vidéo cinématique avec effets professionnels
@@ -27,29 +66,23 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
         print("🎬 Génération des images cinématiques...")
         print(f"   Thème: {prompt}")
         
-        # ✅ URL CORRIGÉE - API gratuite
-        API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
         headers = {"Authorization": f"Bearer {settings.HF_API_KEY}"}
         
         for i in range(min(num_images, len(variations))):
             try:
                 print(f"  📸 Image {i+1}/{num_images}...")
                 
-                async with httpx.AsyncClient(timeout=120) as client:
-                    response = await client.post(
-                        API_URL,
-                        headers=headers,
-                        json={"inputs": variations[i]}
-                    )
+                # ✅ Utilise le système de fallback
+                image_data = await generate_single_image(variations[i], headers)
                 
-                if response.status_code == 200:
+                if image_data:
                     image_path = os.path.join(output_dir, f"frame_{i}.png")
                     with open(image_path, "wb") as f:
-                        f.write(response.content)
+                        f.write(image_data)
                     images.append(image_path)
                     print(f"  ✅ Image {i+1}/{num_images} générée")
                 else:
-                    print(f"  ⚠️ Erreur image {i+1}: {response.status_code}")
+                    print(f"  ⚠️ Image {i+1}/{num_images} échouée (tous les modèles)")
                     
             except Exception as e:
                 print(f"  ⚠️ Erreur: {str(e)}")
@@ -58,7 +91,7 @@ async def generate_video(prompt: str, num_images: int = 5) -> str:
         if len(images) < 2:
             raise Exception(f"Seulement {len(images)} image(s). Réessayez.")
         
-        # ===== Le reste du code reste IDENTIQUE =====
+        # ===== CRÉATION VIDÉO (identique à avant) =====
         print(f"🎬 Création de {len(images)} clips avec effets Ken Burns...")
         
         ken_burns_effects = [
