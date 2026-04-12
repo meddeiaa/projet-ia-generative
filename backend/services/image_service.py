@@ -5,7 +5,7 @@ from services.prompt_service import enhance_prompt, get_negative_prompt
 
 async def generate_image(prompt: str, style: str = "general") -> str:
     """
-    Génère une image avec l'IA (Stable Diffusion)
+    Génère une image avec l'IA (FLUX.1-schnell - Black Forest Labs)
     """
     try:
         # Améliorer le prompt
@@ -21,8 +21,8 @@ async def generate_image(prompt: str, style: str = "general") -> str:
         
         print(f"🔑 Clé API: {settings.HF_API_KEY[:10]}...")
         
-        # ✅ URL CORRIGÉE - API gratuite
-        API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
+        # ✅ NOUVEAU MODÈLE - FLUX.1-schnell (rapide, gratuit, haute qualité)
+        API_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
         
         headers = {
             "Authorization": f"Bearer {settings.HF_API_KEY}"
@@ -38,6 +38,38 @@ async def generate_image(prompt: str, style: str = "general") -> str:
             )
         
         print(f"📥 Status code: {response.status_code}")
+        
+        # Si FLUX.1-schnell ne marche pas, essayer FLUX.1-dev
+        if response.status_code in [410, 503, 500]:
+            print("⚠️ FLUX.1-schnell indisponible, essai avec FLUX.1-dev...")
+            
+            API_URL_FALLBACK = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-dev"
+            print(f"📡 Appel API fallback: {API_URL_FALLBACK}")
+            
+            async with httpx.AsyncClient(timeout=120) as client:
+                response = await client.post(
+                    API_URL_FALLBACK,
+                    headers=headers,
+                    json={"inputs": enhanced_prompt}
+                )
+            
+            print(f"📥 Status code fallback: {response.status_code}")
+        
+        # Si toujours en erreur, essayer stable-diffusion-3.5
+        if response.status_code in [410, 503, 500]:
+            print("⚠️ FLUX.1-dev indisponible, essai avec SD 3.5...")
+            
+            API_URL_FALLBACK2 = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-3.5-large"
+            print(f"📡 Appel API fallback 2: {API_URL_FALLBACK2}")
+            
+            async with httpx.AsyncClient(timeout=120) as client:
+                response = await client.post(
+                    API_URL_FALLBACK2,
+                    headers=headers,
+                    json={"inputs": enhanced_prompt}
+                )
+            
+            print(f"📥 Status code fallback 2: {response.status_code}")
         
         if response.status_code != 200:
             error_text = response.text
