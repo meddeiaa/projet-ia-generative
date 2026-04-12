@@ -1,30 +1,38 @@
 # ===== BACKEND DOCKERFILE =====
-# Image Python légère
+
+# On part d'une image Python légère
+# "slim" = version minimale, moins lourde
 FROM python:3.11-slim
 
-# Installer FFmpeg (pour la génération vidéo)
+# Installer FFmpeg pour la génération vidéo
+# apt-get = gestionnaire de paquets Linux (comme npm mais pour Linux)
 RUN apt-get update && \
     apt-get install -y ffmpeg && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Définir le dossier de travail
+# Définir le dossier de travail dans le conteneur
 WORKDIR /app
 
-# Copier les dépendances d'abord (optimise le cache Docker)
+# Copier requirements.txt EN PREMIER
+# Pourquoi ? Optimisation du cache Docker :
+# Si le code change mais pas requirements.txt
+# → Docker réutilise le cache pip (plus rapide !)
 COPY requirements.txt .
 
 # Installer les dépendances Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copier tout le code
+# Copier tout le reste du code
 COPY . .
 
-# Créer le dossier output
+# Créer le dossier output pour les vidéos générées
 RUN mkdir -p output
 
-# Exposer le port
+# Documenter le port (informatif, pas obligatoire)
 EXPOSE 8000
 
-# Lancer le serveur
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# ✅ MODIFIÉ : Utilise ${PORT} de Render
+# En local  → PORT n'existe pas → utilise 8000
+# Sur Render → PORT = leur port → utilise leur port
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}

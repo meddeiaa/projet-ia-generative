@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional
+import os
 
 # Importer les services
 from services.text_service import generate_text
@@ -16,10 +17,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configurer CORS
+# ✅ CORS adapté pour le déploiement
+# En local → accepte tout
+# En production → accepte seulement l'URL du frontend
+FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[FRONTEND_URL] if FRONTEND_URL != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,6 +50,7 @@ async def root():
     """Page d'accueil de l'API"""
     return {
         "message": "Bienvenue sur l'API IA Générative !",
+        "status": "online",
         "endpoints": {
             "texte": "/generate/text",
             "image": "/generate/image",
@@ -54,14 +60,20 @@ async def root():
     }
 
 
+# ✅ NOUVEAU : Health check pour Render
+@app.get("/health")
+async def health():
+    """
+    Render envoie une requête ici pour vérifier que l'app est vivante
+    Si on répond 200 OK → app est saine
+    Si on répond pas → Render redémarre l'app
+    """
+    return {"status": "healthy"}
+
+
 @app.post("/generate/text", response_model=GenerateResponse)
 async def api_generate_text(request: PromptRequest):
-    """
-    Génère du texte à partir d'un prompt
-    
-    - **prompt**: La question ou demande
-    - **Retourne**: Le texte généré par LLaMA 3
-    """
+    """Génère du texte à partir d'un prompt"""
     try:
         result = await generate_text(request.prompt)
         return GenerateResponse(success=True, result=result)
@@ -71,13 +83,7 @@ async def api_generate_text(request: PromptRequest):
 
 @app.post("/generate/image", response_model=GenerateResponse)
 async def api_generate_image(request: ImageRequest):
-    """
-    Génère une image avec l'IA
-    
-    - **prompt**: Description de l'image
-    - **style**: Style artistique (general, photo, art, anime, cinematic, fantasy, realistic)
-    - **Retourne**: Image en base64
-    """
+    """Génère une image avec l'IA"""
     try:
         result = await generate_image(request.prompt, request.style)
         return GenerateResponse(success=True, result=result)
@@ -87,12 +93,7 @@ async def api_generate_image(request: ImageRequest):
 
 @app.post("/generate/video")
 async def api_generate_video(request: PromptRequest):
-    """
-    Génère une vidéo à partir d'un prompt
-    
-    - **prompt**: Thème de la vidéo
-    - **Retourne**: Fichier vidéo MP4
-    """
+    """Génère une vidéo à partir d'un prompt"""
     try:
         video_path = await generate_video(request.prompt)
         return FileResponse(
@@ -108,4 +109,8 @@ async def api_generate_video(request: PromptRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # ✅ Render injecte la variable PORT automatiquement
+    # En local → 8000 (valeur par défaut)
+    # Sur Render → le port qu'ils choisissent
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
