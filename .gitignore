@@ -87,6 +87,9 @@ output/
 # Sauf les assets du frontend
 !frontend/src/assets/**
 
+# Sauf les screenshots du README
+!screenshots/**
+
 # Logs
 *.log
 
