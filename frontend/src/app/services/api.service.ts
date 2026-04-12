@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -26,9 +26,16 @@ export interface GenerateResponse {
 })
 export class ApiService {
   
-  private baseUrl = 'http://localhost:8000';
+  // ✅ Détection automatique de l'environnement
+  // En développement (ng serve) → localhost:8000
+  // En production (Vercel)      → URL Render
+  private baseUrl = isDevMode() 
+    ? 'http://localhost:8000' 
+    : 'https://projet-ia-generative.onrender.com';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    console.log(`🌐 API URL: ${this.baseUrl}`);
+  }
 
   // ===== TEXTE =====
   
