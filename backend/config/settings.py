@@ -1,6 +1,7 @@
 import os
-
 from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
+
 
 
 
@@ -8,16 +9,17 @@ from dotenv import load_dotenv
 # Charger les variables du fichier .env
 load_dotenv()
 
-class Settings:
-    """Configuration de l'application"""
-    
-    # Clés API
-    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
-    HF_API_KEY: str = os.getenv("HF_API_KEY", "")
-    UNSPLASH_ACCESS_KEY: str = os.getenv("UNSPLASH_ACCESS_KEY", "") 
-    
-    # Dossier pour les fichiers générés
+class Settings(BaseSettings):
+    GROQ_API_KEY: str = ""
+    HF_API_KEY: str = ""
+    UNSPLASH_ACCESS_KEY: str = ""
     OUTPUT_DIR: str = "output"
+    
+    # ✅ NOUVEAUX
+    SECRET_KEY: str = "ma-cle-secrete-super-longue-2024-ia-generative"
+    DATABASE_URL: str = "sqlite:///./app.db"
+    
+    class Config:
+        env_file = ".env"
 
-# Instance unique de la configuration
 settings = Settings()
