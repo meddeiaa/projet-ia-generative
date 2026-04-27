@@ -93,6 +93,12 @@ output/
 # Logs
 *.log
 
+# Base de données locale
+*.db
+*.sqlite
+*.sqlite3
+backend/app.db
+
 # ===================================================
 # DOCKER
 # ===================================================
