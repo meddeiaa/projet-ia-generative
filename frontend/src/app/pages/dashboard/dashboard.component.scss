@@ -103,11 +103,7 @@ $transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .brand-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: $accent;
-  box-shadow: 0 0 8px $accent-glow;
+  font-size: 14px;
 }
 
 .brand-name {
