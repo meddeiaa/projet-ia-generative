@@ -1,34 +1,49 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   /**
-   * Intercepteur HTTP
-   * 
-   * FONCTIONNEMENT :
-   * 1. Récupère le token depuis AuthService
-   * 2. Si token existe → clone la requête avec le token
-   * 3. Envoie la requête (avec ou sans token)
-   * 
-   * POURQUOI CLONER LA REQUÊTE ?
-   * Les requêtes HTTP sont IMMUABLES (on ne peut pas les modifier)
-   * On doit créer une copie avec les nouveaux headers
+   * Rôle de cet interceptor :
+   * 1. Ajouter automatiquement le token JWT aux requêtes protégées
+   * 2. Détecter les erreurs 401 (token expiré / invalide)
+   * 3. Déconnecter automatiquement l'utilisateur si la session n'est plus valide
    */
-  
+
   const authService = inject(AuthService);
   const token = authService.getToken();
 
-  if (token) {
-    // Clone la requête et ajoute le header Authorization
-    const authReq = req.clone({
-      headers: req.headers.set('Authorization', `Bearer ${token}`)
-    });
-    
-    // Envoie la requête avec le token
-    return next(authReq);
-  }
+  // Routes d'authentification : on ne met pas de token dessus
+  const isAuthRoute =
+    req.url.includes('/auth/login') ||
+    req.url.includes('/auth/register');
 
-  // Pas de token → envoie la requête normale (pour login/register)
-  return next(req);
+  // Si token existe et que ce n'est pas une route d'auth
+  const authReq = token && !isAuthRoute
+    ? req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+    : req;
+
+  return next(authReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      /**
+       * Si le backend répond 401 :
+       * - token expiré
+       * - token invalide
+       * - utilisateur supprimé de la DB
+       *
+       * Alors on déconnecte automatiquement l'utilisateur
+       */
+      if (error.status === 401 && token && !isAuthRoute) {
+        console.warn('🔒 Session expirée ou invalide. Déconnexion automatique.');
+        authService.logout();
+      }
+
+      return throwError(() => error);
+    })
+  );
 };
