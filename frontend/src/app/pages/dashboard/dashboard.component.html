@@ -1,0 +1,233 @@
+<div class="dashboard">
+
+  <!-- ================================================== -->
+  <!-- SIDEBAR HISTORIQUE -->
+  <!-- ================================================== -->
+  <aside class="sidebar" [class.sidebar-closed]="!isSidebarOpen()">
+
+    <div class="sidebar-header">
+      <div class="sidebar-title">
+        <span class="sidebar-icon">⏱</span>
+        <span class="sidebar-label">Historique</span>
+      </div>
+      <button class="sidebar-toggle" (click)="toggleSidebar()">
+        {{ isSidebarOpen() ? '◀' : '▶' }}
+      </button>
+    </div>
+
+    <div class="user-info">
+      <div class="user-avatar">
+        {{ authService.currentUser()?.nom?.charAt(0)?.toUpperCase() }}
+      </div>
+      <div class="user-details" *ngIf="isSidebarOpen()">
+        <span class="user-name">{{ authService.currentUser()?.nom }}</span>
+        <span class="user-email">{{ authService.currentUser()?.email }}</span>
+      </div>
+    </div>
+
+    <div class="history-list" *ngIf="isSidebarOpen()">
+
+      @if (isLoadingHistory()) {
+        <div class="history-loading">
+          <div class="loading-spinner"></div>
+          <span>Chargement...</span>
+        </div>
+      }
+
+      @if (!isLoadingHistory() && history().length === 0) {
+        <div class="history-empty">
+          <span class="empty-icon">—</span>
+          <span>Aucune génération</span>
+        </div>
+      }
+
+      @for (item of history(); track item.id) {
+        <div
+          class="history-item"
+          [class.active]="selectedHistoryItem()?.id === item.id"
+          (click)="selectHistoryItem(item)"
+        >
+          <div class="history-item-header">
+            <span class="history-type-icon">{{ getTypeIcon(item.generation_type) }}</span>
+            <span class="history-time">{{ formatDate(item.created_at) }}</span>
+            <button
+              class="history-delete"
+              (click)="deleteHistoryItem(item.id, $event)"
+              title="Supprimer"
+            >
+              ×
+            </button>
+          </div>
+          <p class="history-prompt">{{ item.prompt }}</p>
+        </div>
+      }
+    </div>
+
+    <div class="sidebar-footer" *ngIf="isSidebarOpen()">
+      <button class="logout-btn" (click)="logout()">
+        Déconnexion
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ================================================== -->
+  <!-- CONTENU PRINCIPAL -->
+  <!-- ================================================== -->
+  <main class="main-content">
+
+    <header class="main-header">
+      <div class="header-left">
+        <button class="menu-btn" (click)="toggleSidebar()">☰</button>
+        <div class="header-title">
+          <h1>IA Générative</h1>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="user-badge">
+          {{ authService.currentUser()?.nom }}
+        </span>
+      </div>
+    </header>
+
+    <div class="main-body">
+
+      <!-- Sélection du type -->
+      <div class="type-selector">
+        @for (type of generationTypes; track type.id) {
+          <button
+            class="type-btn"
+            [class.active]="selectedType() === type.id"
+            (click)="selectType(type.id)"
+          >
+            <span class="type-icon">{{ type.icon }}</span>
+            <span class="type-label">{{ type.label }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Zone de saisie -->
+      <div class="input-section">
+
+        <div class="prompt-row">
+          <textarea
+            class="prompt-input"
+            [(ngModel)]="prompt"
+            placeholder="Décrivez ce que vous voulez générer..."
+            rows="2"
+            (keydown.ctrl.enter)="generate()"
+          ></textarea>
+
+          <button
+            class="generate-btn"
+            (click)="generate()"
+            [disabled]="isGenerating()"
+          >
+            @if (isGenerating()) {
+              <span class="loading-spinner-small"></span>
+            } @else {
+              <span class="btn-arrow">→</span>
+            }
+          </button>
+        </div>
+
+        @if (selectedType() === 'image') {
+          <div class="style-selector">
+            <div class="style-options">
+              @for (style of imageStyles; track style.value) {
+                <button
+                  class="style-btn"
+                  [class.active]="selectedStyle === style.value"
+                  (click)="selectedStyle = style.value"
+                >
+                  {{ style.label }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+
+      <!-- Messages -->
+      @if (errorMessage()) {
+        <div class="message error-msg">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      @if (successMessage()) {
+        <div class="message success-msg">
+          {{ successMessage() }}
+        </div>
+      }
+
+      <!-- Résultats -->
+      <div class="result-section">
+
+        @if (textResult()) {
+          <div class="result-card">
+            <div class="result-header">
+              <span class="result-tag text-tag">Texte</span>
+            </div>
+            <div class="text-result">
+              {{ textResult() }}
+            </div>
+          </div>
+        }
+
+        @if (imageResult()) {
+          <div class="result-card">
+            <div class="result-header">
+              <span class="result-tag image-tag">Image</span>
+              <button class="download-btn" (click)="downloadImage()">
+                Télécharger
+              </button>
+            </div>
+            <img
+              [src]="imageResult()"
+              alt="Image générée"
+              class="image-result"
+            />
+          </div>
+        }
+
+        @if (videoUrl()) {
+          <div class="result-card">
+            <div class="result-header">
+              <span class="result-tag video-tag">Vidéo</span>
+            </div>
+            <video
+              [src]="videoUrl()"
+              controls
+              class="video-result"
+              autoplay
+            ></video>
+          </div>
+        }
+
+        <!-- État vide -->
+        @if (!textResult() && !imageResult() && !videoUrl() && !isGenerating()) {
+          <div class="empty-state">
+            
+            <h2>Commencez à créer</h2>
+            <p>Saisissez un prompt pour générer du contenu avec l'IA</p>
+          </div>
+        }
+
+        <!-- Chargement -->
+        @if (isGenerating()) {
+          <div class="loading-state">
+            <div class="loading-bar">
+              <div class="loading-bar-progress"></div>
+            </div>
+            <p class="loading-text">{{ getLoadingMessage() }}</p>
+          </div>
+        }
+
+      </div>
+
+    </div>
+  </main>
+
+</div>

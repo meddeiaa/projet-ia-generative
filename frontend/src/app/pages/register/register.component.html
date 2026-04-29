@@ -1,0 +1,106 @@
+<div class="auth-container">
+
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <div class="auth-card">
+
+    <div class="auth-header">
+      <div class="auth-logo">✨</div>
+      <h1 class="auth-title">Créer un compte</h1>
+      <p class="auth-subtitle">Rejoignez l'aventure IA</p>
+    </div>
+
+    <form class="auth-form" (ngSubmit)="onSubmit()">
+
+      <!-- Nom -->
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon">👤</span>
+          Nom complet
+        </label>
+        <input
+          type="text"
+          class="form-input"
+          placeholder="Votre nom"
+          [(ngModel)]="nom"
+          name="nom"
+        />
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon">📧</span>
+          Email
+        </label>
+        <input
+          type="email"
+          class="form-input"
+          placeholder="votre@email.com"
+          [(ngModel)]="email"
+          name="email"
+        />
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon">🔒</span>
+          Mot de passe
+        </label>
+        <div class="input-wrapper">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            class="form-input"
+            placeholder="Minimum 6 caractères"
+            [(ngModel)]="password"
+            name="password"
+          />
+          <button type="button" class="toggle-password" (click)="togglePassword()">
+            {{ showPassword() ? '👁️' : '👁️‍🗨️' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Confirmer mot de passe -->
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon">🔐</span>
+          Confirmer le mot de passe
+        </label>
+        <input
+          [type]="showPassword() ? 'text' : 'password'"
+          class="form-input"
+          placeholder="Répétez votre mot de passe"
+          [(ngModel)]="confirmPassword"
+          name="confirmPassword"
+        />
+      </div>
+
+      @if (errorMessage()) {
+        <div class="error-message">
+          ⚠️ {{ errorMessage() }}
+        </div>
+      }
+
+      <button type="submit" class="auth-btn" [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="loading-spinner"></span>
+          Inscription...
+        } @else {
+           Créer mon compte
+        }
+      </button>
+
+    </form>
+
+    <div class="auth-footer">
+      <p>
+        Déjà un compte ?
+        <a routerLink="/login" class="auth-link">Se connecter</a>
+      </p>
+    </div>
+
+  </div>
+</div>
