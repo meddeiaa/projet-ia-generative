@@ -1,0 +1,93 @@
+<div class="auth-container">
+  
+  <!-- Fond animé -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <!-- Carte de connexion -->
+  <div class="auth-card">
+    
+    <!-- Header -->
+    <div class="auth-header">
+      <div class="auth-logo">🤖</div>
+      <h1 class="auth-title">IA Générative</h1>
+      <p class="auth-subtitle">Connectez-vous à votre compte</p>
+    </div>
+
+    <!-- Formulaire -->
+    <form class="auth-form" (ngSubmit)="onSubmit()">
+      
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon">📧</span>
+          Email
+        </label>
+        <input
+          type="email"
+          class="form-input"
+          placeholder="votre@email.com"
+          [(ngModel)]="email"
+          name="email"
+          autocomplete="email"
+        />
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon">🔒</span>
+          Mot de passe
+        </label>
+        <div class="input-wrapper">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            class="form-input"
+            placeholder="••••••••"
+            [(ngModel)]="password"
+            name="password"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePassword()"
+          >
+            {{ showPassword() ? '👁️' : '👁️‍🗨️' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Message d'erreur -->
+      @if (errorMessage()) {
+        <div class="error-message">
+          ⚠️ {{ errorMessage() }}
+        </div>
+      }
+
+      <!-- Bouton de connexion -->
+      <button
+        type="submit"
+        class="auth-btn"
+        [disabled]="isLoading()"
+      >
+        @if (isLoading()) {
+          <span class="loading-spinner"></span>
+          Connexion...
+        } @else {
+          Se connecter
+        }
+      </button>
+
+    </form>
+
+    <!-- Lien inscription -->
+    <div class="auth-footer">
+      <p>
+        Pas encore de compte ?
+        <a routerLink="/register" class="auth-link">S'inscrire</a>
+      </p>
+    </div>
+
+  </div>
+</div>
