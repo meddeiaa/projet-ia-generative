@@ -1,70 +1,86 @@
-<div class="dashboard">
+<div class="dashboard" [class.sidebar-open]="isSidebarOpen()">
 
   <!-- ================================================== -->
-  <!-- SIDEBAR HISTORIQUE -->
+  <!-- OVERLAY MOBILE -->
   <!-- ================================================== -->
-  <aside class="sidebar" [class.sidebar-closed]="!isSidebarOpen()">
+  @if (isSidebarOpen()) {
+    <div class="sidebar-overlay" (click)="toggleSidebar()"></div>
+  }
 
-    <div class="sidebar-header">
-      <div class="sidebar-title">
-        <span class="sidebar-icon">⏱</span>
-        <span class="sidebar-label">Historique</span>
+  <!-- ================================================== -->
+  <!-- SIDEBAR -->
+  <!-- ================================================== -->
+  <aside class="sidebar" [class.open]="isSidebarOpen()">
+
+    <!-- Logo + Toggle -->
+    <div class="sidebar-top">
+      <div class="brand">
+        <div class="brand-dot"></div>
+        <span class="brand-name">IA Gen</span>
       </div>
-      <button class="sidebar-toggle" (click)="toggleSidebar()">
-        {{ isSidebarOpen() ? '◀' : '▶' }}
-      </button>
+      <button class="close-sidebar" (click)="toggleSidebar()">✕</button>
     </div>
 
-    <div class="user-info">
-      <div class="user-avatar">
+    <!-- User -->
+    <div class="sidebar-user">
+      <div class="avatar">
         {{ authService.currentUser()?.nom?.charAt(0)?.toUpperCase() }}
       </div>
-      <div class="user-details" *ngIf="isSidebarOpen()">
+      <div class="user-meta">
         <span class="user-name">{{ authService.currentUser()?.nom }}</span>
         <span class="user-email">{{ authService.currentUser()?.email }}</span>
       </div>
     </div>
 
-    <div class="history-list" *ngIf="isSidebarOpen()">
+    <!-- History Header -->
+    <div class="history-header">
+      <span class="history-title">Historique</span>
+      <span class="history-count">{{ history().length }}</span>
+    </div>
 
+    <!-- History List -->
+    <div class="history-scroll">
       @if (isLoadingHistory()) {
-        <div class="history-loading">
-          <div class="loading-spinner"></div>
-          <span>Chargement...</span>
+        <div class="history-skeleton">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line"></div>
         </div>
       }
 
       @if (!isLoadingHistory() && history().length === 0) {
         <div class="history-empty">
-          <span class="empty-icon">—</span>
+          <div class="empty-bar"></div>
           <span>Aucune génération</span>
         </div>
       }
 
       @for (item of history(); track item.id) {
         <div
-          class="history-item"
-          [class.active]="selectedHistoryItem()?.id === item.id"
+          class="history-card"
+          [class.selected]="selectedHistoryItem()?.id === item.id"
           (click)="selectHistoryItem(item)"
         >
-          <div class="history-item-header">
-            <span class="history-type-icon">{{ getTypeIcon(item.generation_type) }}</span>
-            <span class="history-time">{{ formatDate(item.created_at) }}</span>
-            <button
-              class="history-delete"
-              (click)="deleteHistoryItem(item.id, $event)"
-              title="Supprimer"
-            >
-              ×
-            </button>
+          <div class="card-top">
+            <span class="card-type" [attr.data-type]="item.generation_type">
+              {{ item.generation_type }}
+            </span>
+            <span class="card-time">{{ formatDate(item.created_at) }}</span>
           </div>
-          <p class="history-prompt">{{ item.prompt }}</p>
+          <p class="card-prompt">{{ item.prompt }}</p>
+          <button
+            class="card-delete"
+            (click)="deleteHistoryItem(item.id, $event)"
+          >
+            Supprimer
+          </button>
         </div>
       }
     </div>
 
-    <div class="sidebar-footer" *ngIf="isSidebarOpen()">
-      <button class="logout-btn" (click)="logout()">
+    <!-- Logout -->
+    <div class="sidebar-bottom">
+      <button class="btn-logout" (click)="logout()">
         Déconnexion
       </button>
     </div>
@@ -72,156 +88,153 @@
   </aside>
 
   <!-- ================================================== -->
-  <!-- CONTENU PRINCIPAL -->
+  <!-- MAIN -->
   <!-- ================================================== -->
-  <main class="main-content">
+  <main class="main">
 
-    <header class="main-header">
-      <div class="header-left">
-        <button class="menu-btn" (click)="toggleSidebar()">☰</button>
-        <div class="header-title">
-          <h1>IA Générative</h1>
-        </div>
+    <!-- Top Bar -->
+    <div class="topbar">
+      <button class="btn-menu" (click)="toggleSidebar()">
+        <span class="menu-line"></span>
+        <span class="menu-line"></span>
+        <span class="menu-line"></span>
+      </button>
+      <h1 class="page-title">Dashboard</h1>
+      <div class="topbar-right">
+        <span class="status-dot"></span>
+        <span class="status-text">En ligne</span>
       </div>
-      <div class="header-right">
-        <span class="user-badge">
-          {{ authService.currentUser()?.nom }}
-        </span>
-      </div>
-    </header>
+    </div>
 
-    <div class="main-body">
+    <!-- Content -->
+    <div class="content">
 
-      <!-- Sélection du type -->
-      <div class="type-selector">
+      <!-- Type Tabs -->
+      <div class="tabs">
         @for (type of generationTypes; track type.id) {
           <button
-            class="type-btn"
+            class="tab"
             [class.active]="selectedType() === type.id"
             (click)="selectType(type.id)"
           >
-            <span class="type-icon">{{ type.icon }}</span>
-            <span class="type-label">{{ type.label }}</span>
+            <span class="tab-icon">{{ type.icon }}</span>
+            <span class="tab-text">{{ type.label }}</span>
           </button>
         }
       </div>
 
-      <!-- Zone de saisie -->
-      <div class="input-section">
-
-        <div class="prompt-row">
+      <!-- Input Area -->
+      <div class="input-area">
+        <div class="input-box">
           <textarea
-            class="prompt-input"
+            class="text-input"
             [(ngModel)]="prompt"
-            placeholder="Décrivez ce que vous voulez générer..."
-            rows="2"
+            placeholder="Que souhaitez-vous créer ?"
+            rows="3"
             (keydown.ctrl.enter)="generate()"
           ></textarea>
-
-          <button
-            class="generate-btn"
-            (click)="generate()"
-            [disabled]="isGenerating()"
-          >
-            @if (isGenerating()) {
-              <span class="loading-spinner-small"></span>
-            } @else {
-              <span class="btn-arrow">→</span>
-            }
-          </button>
+          <div class="input-footer">
+            <span class="input-hint">Ctrl + Entrée</span>
+            <button
+              class="btn-generate"
+              (click)="generate()"
+              [disabled]="isGenerating()"
+              [class.loading]="isGenerating()"
+            >
+              @if (isGenerating()) {
+                <span class="spinner"></span>
+                <span>Génération...</span>
+              } @else {
+                <span>Générer</span>
+                <span class="btn-icon">↗</span>
+              }
+            </button>
+          </div>
         </div>
 
         @if (selectedType() === 'image') {
-          <div class="style-selector">
-            <div class="style-options">
-              @for (style of imageStyles; track style.value) {
-                <button
-                  class="style-btn"
-                  [class.active]="selectedStyle === style.value"
-                  (click)="selectedStyle = style.value"
-                >
-                  {{ style.label }}
-                </button>
-              }
-            </div>
+          <div class="styles-row">
+            @for (style of imageStyles; track style.value) {
+              <button
+                class="style-chip"
+                [class.active]="selectedStyle === style.value"
+                (click)="selectedStyle = style.value"
+              >
+                {{ style.label }}
+              </button>
+            }
           </div>
         }
-
       </div>
 
       <!-- Messages -->
       @if (errorMessage()) {
-        <div class="message error-msg">
+        <div class="alert alert-error">
+          <span class="alert-dot error"></span>
           {{ errorMessage() }}
         </div>
       }
 
       @if (successMessage()) {
-        <div class="message success-msg">
+        <div class="alert alert-success">
+          <span class="alert-dot success"></span>
           {{ successMessage() }}
         </div>
       }
 
-      <!-- Résultats -->
-      <div class="result-section">
+      <!-- Output -->
+      <div class="output">
 
         @if (textResult()) {
-          <div class="result-card">
-            <div class="result-header">
-              <span class="result-tag text-tag">Texte</span>
+          <div class="output-card">
+            <div class="output-top">
+              <span class="output-badge text">Texte</span>
             </div>
-            <div class="text-result">
+            <div class="output-text">
               {{ textResult() }}
             </div>
           </div>
         }
 
         @if (imageResult()) {
-          <div class="result-card">
-            <div class="result-header">
-              <span class="result-tag image-tag">Image</span>
-              <button class="download-btn" (click)="downloadImage()">
+          <div class="output-card">
+            <div class="output-top">
+              <span class="output-badge image">Image</span>
+              <button class="btn-download" (click)="downloadImage()">
                 Télécharger
               </button>
             </div>
-            <img
-              [src]="imageResult()"
-              alt="Image générée"
-              class="image-result"
-            />
+            <img [src]="imageResult()" alt="Résultat" class="output-image" />
           </div>
         }
 
         @if (videoUrl()) {
-          <div class="result-card">
-            <div class="result-header">
-              <span class="result-tag video-tag">Vidéo</span>
+          <div class="output-card">
+            <div class="output-top">
+              <span class="output-badge video">Vidéo</span>
             </div>
-            <video
-              [src]="videoUrl()"
-              controls
-              class="video-result"
-              autoplay
-            ></video>
+            <video [src]="videoUrl()" controls autoplay class="output-video"></video>
           </div>
         }
 
-        <!-- État vide -->
+        <!-- Empty -->
         @if (!textResult() && !imageResult() && !videoUrl() && !isGenerating()) {
-          <div class="empty-state">
-            
-            <h2>Commencez à créer</h2>
-            <p>Saisissez un prompt pour générer du contenu avec l'IA</p>
+          <div class="empty-output">
+            <div class="empty-ring">
+              <div class="empty-ring-inner"></div>
+            </div>
+            <p class="empty-title">Prêt à générer</p>
+            <p class="empty-sub">Saisissez un prompt ci-dessus pour commencer</p>
           </div>
         }
 
-        <!-- Chargement -->
+        <!-- Loading -->
         @if (isGenerating()) {
-          <div class="loading-state">
-            <div class="loading-bar">
-              <div class="loading-bar-progress"></div>
+          <div class="generating">
+            <div class="gen-bar">
+              <div class="gen-progress"></div>
             </div>
-            <p class="loading-text">{{ getLoadingMessage() }}</p>
+            <p class="gen-text">{{ getLoadingMessage() }}</p>
           </div>
         }
 
@@ -229,5 +242,4 @@
 
     </div>
   </main>
-
 </div>
